@@ -1,0 +1,726 @@
+#--------------------------------CUT HERE-------------------------------------
+#! /bin/sh
+#
+# This is a shell archive.  Save this into a file, edit it
+# and delete all lines above this comment.  Then give this
+# file to sh by executing the command "sh file".  The files
+# will be extracted into the current directory owned by
+# you with default permissions.
+#
+# The files contained herein are:
+#
+# \c
+-rw-rw-r--  1 saka          913 Nov 19 15:10 Makefile
+# \c
+-rw-rw-r--  1 saka         1046 Nov 19 15:57 README
+# \c
+-r--r--r--  1 saka          252 Oct  8 14:05 csr.icon
+# \c
+-r--r--r--  1 saka          277 Oct  8 14:05 csr_mask.icon
+# \c
+-r--r--r--  1 saka         8371 Oct 11 14:46 idle.c
+# \c
+-r--r--r--  1 saka         2315 Oct  8 14:05 idle.icon
+# \c
+-r--r--r--  1 saka         2056 Nov 19 14:55 idle.man
+#
+echo 'x - Makefile'
+if test -f Makefile; then echo 'shar: not overwriting Makefile'; else
+sed 's/^X//' << '________This_Is_The_END________' > Makefile
+XDEST	      = /usr/pds/bin
+X
+XDESTMAN	      = /usr/man/catp/idle.p
+X
+XEXTHDRS	      = /usr/include/X/Xlib.h \
+X		/usr/include/curses.h \
+X		/usr/include/math.h \
+X		/usr/include/signal.h \
+X		/usr/include/stdio.h \
+X		/usr/include/strings.h \
+X		/usr/include/sys/time.h
+X
+XLDFLAGS	      = -lX -lcurses -ltermcap
+X
+XLINKER	      = cc
+X
+XOBJS	      = idle.o
+X
+XPROGRAM	      = idle
+X
+XSRCS	      = idle.c
+X
+XINCLUDES      = csr.icon \
+X		csr_mask.icon \
+X		idle.icon
+X
+XMAN	      = idle.man
+X
+XCAT	      = idle.cat
+X
+Xall:		$(PROGRAM)
+X
+X$(PROGRAM):     $(OBJS) $(LIBS)
+X		@echo -n "Loading $(PROGRAM) ... "
+X		@$(LINKER) $(OBJS) $(LIBS) -o $(PROGRAM) $(LDFLAGS)
+X		@echo "done"
+X
+Xclean:;		@rm -f $(OBJS) $(CAT)
+X
+Xinstall:	$(PROGRAM)
+X		@echo Installing $(PROGRAM) in $(DEST)
+X		@install -s $(PROGRAM) $(DEST)
+X
+Xprogram:        $(PROGRAM)
+X
+Xman:		$(CAT)
+X		cp $(CAT) $(DESTMAN)
+X
+X$(CAT):		$(MAN)
+X		jnroff -man $(MAN) >$(CAT)
+X
+X$(OBJS): $(EXTHDRS) $(INCLUDES)
+X
+________This_Is_The_END________
+if test `wc -l < Makefile` -ne 53; then
+	echo 'shar: Makefile was damaged during transit (should have been 53 bytes)'
+fi
+fi		; : end of overwriting check
+echo 'x - README'
+if test -f README; then echo 'shar: not overwriting README'; else
+sed 's/^X//' << '________This_Is_The_END________' > README
+X
+Xidle のインストールに関するメモ
+X
+X	阪口哲男(図書館情報大学) E-mail: saka@ulis.JUNET
+X
+X  idle は Sony-NEWS (NWS-841/NEWS-OS2.2) 上で開発されました。
+X従って、以下の環境の下でインストールされることを前提にしています。
+X
+X(1) X-Window Version 10 (R4) がインストールされていること。
+X(2) カーソル等の制御のための curses パッケージがあること。
+X(3) 日本語のオンライン・マニュアルが読めること。
+X
+Xまた、4.3BSD や System V 等の環境に対応するかどうかは
+Xテストしていません。
+X
+X　インストールは(Sony-NEWS なら)大体以下のステップで行なうことが出来ます。
+X
+X(1) shar を解く。
+X(2) サイト毎のディレクトリ管理にしたがって、Makefile 中の
+X　　DEST と DESTMAN を書き直す。
+X(3) make install を実行する。(実行ファイルのインストール)
+X(4) make man を実行する。(オンライン・マニュアルのインストール)
+X
+X　なお、この idle は一つの腕試しとして製作したものであるので、
+X使用、配布等は自由に行なってください。
+X（もちろん、修正等も自由ですが、その場合は私の名前に加えて
+X修正者等の名前を明記するようにお願いします。）
+X
+X　その他、idle に関する疑問等がありましたら、私まで
+Xmail を下さい。
+X
+________This_Is_The_END________
+if test `wc -l < README` -ne 31; then
+	echo 'shar: README was damaged during transit (should have been 31 bytes)'
+fi
+fi		; : end of overwriting check
+echo 'x - csr.icon'
+if test -f csr.icon; then echo 'shar: not overwriting csr.icon'; else
+sed 's/^X//' << '________This_Is_The_END________' > csr.icon
+X#define csr_width 16
+X#define csr_height 16
+X#define csr_x_hot 0
+X#define csr_y_hot 0
+Xstatic short csr_bits[] = {
+X   0x0000, 0x0000, 0x0000, 0x0000,
+X   0x0000, 0x0000, 0x0000, 0x0000,
+X   0x0000, 0x0000, 0x0000, 0x0000,
+X   0x0000, 0x0000, 0x0000, 0x0000};
+________This_Is_The_END________
+if test `wc -l < csr.icon` -ne 9; then
+	echo 'shar: csr.icon was damaged during transit (should have been 9 bytes)'
+fi
+fi		; : end of overwriting check
+echo 'x - csr_mask.icon'
+if test -f csr_mask.icon; then echo 'shar: not overwriting csr_mask.icon'; else
+sed 's/^X//' << '________This_Is_The_END________' > csr_mask.icon
+X#define csr_mask_width 16
+X#define csr_mask_height 16
+X#define csr_mask_x_hot 0
+X#define csr_mask_y_hot 0
+Xstatic short csr_mask_bits[] = {
+X   0x0000, 0x0000, 0x0000, 0x0000,
+X   0x0000, 0x0000, 0x0000, 0x0000,
+X   0x0000, 0x0000, 0x0000, 0x0000,
+X   0x0000, 0x0000, 0x0000, 0x0000};
+________This_Is_The_END________
+if test `wc -l < csr_mask.icon` -ne 9; then
+	echo 'shar: csr_mask.icon was damaged during transit (should have been 9 bytes)'
+fi
+fi		; : end of overwriting check
+echo 'x - idle.c'
+if test -f idle.c; then echo 'shar: not overwriting idle.c'; else
+sed 's/^X//' << '________This_Is_The_END________' > idle.c
+X/*
+X * idle.c - Display Idle (X10/TTY)
+X *
+X *	Written by saka@ulis.junet (Sakaguchi, Tetsuo)
+X *
+X * Program name:	idle
+X * Parameters:
+X *	-X:		X10 mode (default if DISPLAY exists in env.)
+X *	-T:		TTY mode (default if DISPLAY does not exist in env.)
+X *	-b:		screen blank mode
+X *	-m:		moving icon mode (default)
+X *	-F {color}:	foreground color (color X10 only, default: white)
+X *	-B {color}:	background color (color X10 only, default: black)
+X *	-r:		reverse color (X10 only)
+X *	-i {file/word}:	set icon bitmap file (X10) or icon word (TTY)
+X *	-D {display}:	display name (X10 only)
+X */
+X
+Xchar RCSHeader[] = "$Header: idle.c,v 1.14 88/10/11 14:46:19 saka Exp $";
+X
+X#include <stdio.h>
+X#include <curses.h>
+X#include <sys/time.h>
+X#include <signal.h>
+X#include <math.h>
+X#include <strings.h>
+X#include <X/Xlib.h>
+X
+X/* default icons */
+X#include "csr.icon"
+X#include "csr_mask.icon"
+X#include "idle.icon"
+X#define IDLE_WORD	"NEWS"
+X
+X/* global variables */
+Xchar *name;					/* program name */
+Xchar *fg_color = NULL, *bg_color = NULL;	/* color name */
+XColor foreground, background;			/* colors */
+Xint rv_mode = 0;				/* reverse flag */
+Xchar *icon_name = NULL;				/* icon file/word */
+Xint icon_width = idle_width;			/* width of bitmap icon */
+Xint icon_height = idle_height; 			/* height of bitmap icon */
+Xshort *icon_bits = idle_bits;			/* bitmap of icon */
+Xchar *icon_word;				/* word of icon */
+Xchar *env_display = NULL;			/* env. DISPLAY */
+XWindow wd;					/* window for idle */
+XCursor csr;					/* cursor (none) */
+XDisplay *display;				/* X-display */
+XBitmap bmask;					/* bitmap mask for icon */
+Xint width, height;				/* W & H of display */
+X
+Xchar *getenv();
+X
+X
+X
+X/* Initialize X10 idle window */
+XinitX10 ()
+X{
+X	Color tmp_color;
+X	Pixmap window_bg;	/* background pixmap */
+X	
+X	/* Load bitmap file, if needed */
+X	if (icon_name != NULL) {
+X		if (XReadBitmapFile(icon_name, &icon_width, &icon_height,
+X				&icon_bits, NULL, NULL) != 1) {
+X			fprintf(stderr, "%s: Can't read bitmap file\n", name);
+X			exit(1);
+X		}
+X	}
+X	/* Connecting to X10-server */
+X	if ((display = XOpenDisplay(env_display)) == 0) {
+X		fprintf(stderr, "%s: Can't open display\n", name);
+X		exit(1);
+X	}
+X	/* Set foreground & background colors */
+X	if (DisplayPlanes() > 1) {
+X		/* on color display */
+X		if (fg_color != NULL) {
+X			if (XParseColor(fg_color, &foreground) == 0) {
+X				fprintf(stderr, "%s: Bad color\n", name);
+X				exit(1);
+X			}
+X		} else {
+X			XParseColor("#ffffffffffff", &foreground);
+X		}
+X		if (bg_color != NULL) {
+X			if (XParseColor(bg_color, &background) == 0) {
+X				fprintf(stderr, "%s: Bad color\n", name);
+X				exit(1);
+X			}
+X		} else {
+X			XParseColor("#000000000000", &background);
+X		}
+X		XGetHardwareColor(&foreground);
+X		XGetHardwareColor(&background);
+X	} else {
+X		/* on monochrome display */
+X		foreground.pixel = WhitePixel;
+X		background.pixel = BlackPixel;
+X	}
+X	if (rv_mode != 0) {
+X		tmp_color = foreground;
+X		foreground = background;
+X		background = tmp_color;
+X	}
+X	/* Create idle window */
+X	window_bg = XMakePixmap(0, background.pixel, background.pixel);
+X	width = DisplayWidth(display);
+X	height = DisplayHeight(display);
+X	if ((wd = XCreateWindow(RootWindow, 0, 0, width, height, 0, 0,
+X			window_bg)) == 0) {
+X		fprintf(stderr, "%s: Can't create window\n", name);
+X		exit(1);
+X	}
+X	/* Set null cursor and other property */
+X	csr = XCreateCursor(csr_width, csr_height, csr_bits, csr_mask_bits,
+X			csr_x_hot, csr_y_hot, background.pixel,
+X			background.pixel, GXcopy);
+X	bmask = XStoreBitmap(icon_width, icon_height, icon_bits);
+X	XStoreName(wd, name);
+X	XDefineCursor(wd, csr);
+X	XMapWindow(wd);
+X	XClear(wd);
+X	XSelectInput(wd, KeyPressed | ButtonPressed);
+X	return (0);
+X}
+X
+X/* Re-draw display (X10), when SIGALRM */
+XredrawX10 ()
+X{
+X	int x, y;
+X	
+X	/* Hide all other windows */
+X	XRaiseWindow(wd);
+X	/* Re-drawing */
+X	XClear(wd);
+X	x = rand() % (width - icon_width);
+X	y = rand() % (height - icon_height);
+X	XBitmapBitsPut(wd, x, y, icon_width, icon_height, icon_bits,
+X			foreground.pixel, background.pixel, bmask,
+X			GXcopy, AllPlanes);
+X	XFlush();
+X	return (0);
+X}
+X
+X/* Wait for KEY/BUTTON press */
+XwaitingX10 ()
+X{
+X	XEvent event;
+X	
+X	XNextEvent(&event);
+X	return (0);
+X}
+X
+X/* Idle window destory */
+XresetX10 ()
+X{
+X	XFreeCursor(csr);
+X	XFreeBitmap(bmask);
+X	XDestroyWindow(wd);
+X	return (0);
+X}
+X
+X
+X
+X/* Initialize TTY display */
+XinitTTY ()
+X{
+X	char bp[1024];
+X	
+X	/* Set icon word */
+X	if (icon_name != NULL) {
+X		icon_word = icon_name;
+X	} else {
+X		icon_word = IDLE_WORD;
+X	}
+X	/* Check termcap & initialize curses package */
+X	if (tgetent(bp, getenv("TERM")) != 1) {
+X		fprintf(stderr, "%s: Can't open termcap", name);
+X		exit(1);
+X	}
+X	width = tgetnum("co");
+X	height = tgetnum("li");
+X	if (width < 0 || height < 0) {
+X		fprintf(stderr, "%s: No 'co' or 'li' capability\n", name);
+X		exit(1);
+X	}
+X	initscr();
+X	raw();
+X	setbuf(stdin, NULL);
+X	clear();
+X	refresh();
+X	return (0);
+X}
+X
+X/* Re-draw display (TTY), when SIGALRM */
+XredrawTTY ()
+X{
+X	int x, y;
+X
+X	/* Re-drawing */	
+X	clear();
+X	x = rand() % (width - strlen(icon_word));
+X	y = rand() % (height - strlen(icon_word));
+X	move(y, x);
+X	addstr(icon_word);
+X	refresh();
+X	return (0);
+X}
+X
+X/* Wait for KEY press */
+XwaitingTTY ()
+X{
+X	(void) getchar();
+X	return (0);
+X}
+X
+X/* Reset display (TTY) */
+XresetTTY ()
+X{
+X	endwin();
+X	return (0);
+X}
+X
+X
+X
+X/* for screen blank re-drawing (do nothing) */
+XredrawBLANK ()
+X{
+X	return (0);
+X}
+X
+X/* parameter error subroutine */
+Xbad_param ()
+X{
+X	fprintf(stderr, "%s: Bad parameter\n", name);
+X	exit(1);
+X}
+X
+X/* Main routine */
+Xmain (argc, argv)
+Xint argc;
+Xchar **argv;
+X{
+X	int (*init_fn)() = NULL;	/* initialize function entry */
+X	int (*re_draw_fn)() = NULL;	/* re-draw function entry */
+X	int (*waiting_fn)() = NULL;	/* wait function entry */
+X	int (*reset_fn)() = NULL;	/* reset function entry */
+X	struct itimerval it_val, it_dummy;
+X
+X	/* Setting mode by specified parameters */
+X	name = *argv++;
+X	argc--;
+X	while (argc > 0) {
+X		if (**argv != '-') bad_param();
+X		switch (*(*argv + 1)) {
+X			case 'X':	/* select X10 display mode */
+X				init_fn = initX10;
+X				if (re_draw_fn != redrawBLANK) {
+X					re_draw_fn = redrawX10;
+X				}
+X				waiting_fn = waitingX10;
+X				reset_fn = resetX10;
+X				break;
+X			case 'T':	/* select TTY display mode */
+X				init_fn = initTTY;
+X				if (re_draw_fn != redrawBLANK) {
+X					re_draw_fn = redrawTTY;
+X				}
+X				waiting_fn = waitingTTY;
+X				reset_fn = resetTTY;
+X				break;
+X			case 'b':	/* select blank idle mode */
+X				re_draw_fn = redrawBLANK;
+X				break;
+X			case 'm':	/* select moving idle mode */
+X				/* do nothing */
+X				break;
+X			case 'F':	/* set foreground color */
+X				if (--argc < 1) bad_param();
+X				fg_color = *(++argv);
+X				break;
+X			case 'B':	/* set background color */
+X				if (--argc < 1) bad_param();
+X				bg_color = *(++argv);
+X				break;
+X			case 'r':	/* reverse color mode */
+X				rv_mode = -1;
+X				break;
+X			case 'i':	/* set specified icon */
+X				if (--argc < 1) bad_param();
+X				icon_name = *(++argv);
+X				break;
+X			case 'D':	/* set DISPLAY */
+X				if (--argc < 1) bad_param();
+X				env_display = *(++argv);
+X				break;
+X			default:	/* error */
+X				bad_param();
+X				break;
+X		}
+X		argv++;
+X		argc--;
+X	}
+X	/* Set default mode by environment */
+X	if (init_fn == NULL) {	/* Not set display mode */
+X		if (env_display != NULL) {
+X			/* DISPLAY specified, set X10 mode */
+X			init_fn = initX10;
+X			if (re_draw_fn != redrawBLANK) re_draw_fn = redrawX10;
+X			waiting_fn = waitingX10;
+X			reset_fn = resetX10;
+X		} else {
+X			/* DISPLAY not specified */
+X			if ((env_display = getenv("DISPLAY")) != NULL) {
+X				/* env.DISPLAY exists, set X10 mode */
+X				init_fn = initX10;
+X				if (re_draw_fn != redrawBLANK) {
+X					re_draw_fn = redrawX10;
+X				}
+X				waiting_fn = waitingX10;
+X				reset_fn = resetX10;
+X			} else {
+X				/* env.DISPLAY not exists, set TTY mode */
+X				init_fn = initTTY;
+X				if (re_draw_fn != redrawBLANK) {
+X					re_draw_fn = redrawTTY;
+X				}
+X				waiting_fn = waitingTTY;
+X				reset_fn = resetTTY;
+X			}
+X		}
+X	}
+X	/* Initialize display */
+X	init_fn();
+X	/* Set SIGALRM vector */
+X	signal(SIGALRM, re_draw_fn);
+X	/* Set interval timer */
+X	it_val.it_interval.tv_sec = 2;
+X	it_val.it_interval.tv_usec = 0;
+X	it_val.it_value.tv_sec = 2;
+X	it_val.it_value.tv_usec = 0;
+X	setitimer(ITIMER_REAL, &it_val, &it_dummy);
+X	/* Wait for KEY/(BUTTON) press */
+X	waiting_fn();
+X	/* Unset interval timer */
+X	it_val.it_interval.tv_sec = 0;
+X	it_val.it_interval.tv_usec = 0;
+X	it_val.it_value.tv_sec = 0;
+X	it_val.it_value.tv_usec = 0;
+X	setitimer(ITIMER_REAL, &it_val, &it_dummy);
+X	signal(SIGALRM, SIG_DFL);
+X	/* Reset display */
+X	reset_fn();
+X	exit(0);
+X}
+________This_Is_The_END________
+if test `wc -l < idle.c` -ne 356; then
+	echo 'shar: idle.c was damaged during transit (should have been 356 bytes)'
+fi
+fi		; : end of overwriting check
+echo 'x - idle.icon'
+if test -f idle.icon; then echo 'shar: not overwriting idle.icon'; else
+sed 's/^X//' << '________This_Is_The_END________' > idle.icon
+X#define idle_width 64
+X#define idle_height 64
+Xstatic short idle_bits[] = {
+X   0x0000, 0xffe0, 0x07ff, 0x0000,
+X   0x0000, 0xfff0, 0x0fff, 0x0000,
+X   0x0000, 0x0038, 0x1c00, 0x0000,
+X   0x0000, 0x0018, 0x1800, 0x0000,
+X   0x0000, 0xff98, 0x19ff, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x8200,
+X   0x0000, 0x0098, 0x1900, 0x4300,
+X   0x0000, 0x0098, 0x1900, 0x1380,
+X   0x0000, 0x0198, 0x1980, 0x12e0,
+X   0x0000, 0x0298, 0x1940, 0x020c,
+X   0x0000, 0x0d98, 0x1970, 0x0307,
+X   0x0000, 0xf498, 0xd95f, 0x1904,
+X   0x0000, 0x5498, 0x1915, 0x0d06,
+X   0x0000, 0x5098, 0x1905, 0x0782,
+X   0x0000, 0x0098, 0x1900, 0x00b2,
+X   0x0000, 0x0098, 0x1900, 0x001e,
+X   0x0000, 0x0098, 0x1900, 0x0003,
+X   0x0000, 0x0098, 0x1900, 0x0001,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0x0098, 0x1900, 0x0000,
+X   0x0000, 0xff98, 0x19ff, 0x0000,
+X   0x0000, 0x0018, 0x1800, 0x0000,
+X   0x0000, 0x0038, 0x1c00, 0x0000,
+X   0x0000, 0xfff0, 0x0fff, 0x0000,
+X   0x0000, 0xffe0, 0x07ff, 0x0000,
+X   0x0000, 0x0300, 0x00c0, 0x0000,
+X   0x0000, 0x0300, 0x00c0, 0x0000,
+X   0x0000, 0x0300, 0x00c0, 0x0000,
+X   0x0000, 0x0300, 0x00c0, 0x0000,
+X   0x0000, 0x0300, 0x00c0, 0x0000,
+X   0xfc00, 0xffff, 0xffff, 0x003f,
+X   0xfe00, 0xffff, 0xffff, 0x007f,
+X   0x0600, 0x0000, 0x0000, 0x0060,
+X   0x0600, 0x0000, 0x0000, 0x0060,
+X   0x6600, 0x3f98, 0xcc63, 0x0067,
+X   0xe600, 0x3f98, 0xec63, 0x0067,
+X   0xe600, 0x0198, 0x3673, 0x0060,
+X   0xe600, 0x0199, 0x3273, 0x0060,
+X   0x6600, 0x3f9b, 0xe37b, 0x0063,
+X   0x6600, 0x3f9b, 0xc16b, 0x01e7,
+X   0x6600, 0x019e, 0x01ef, 0x0366,
+X   0x6600, 0x019c, 0x00e7, 0x0266,
+X   0x6600, 0x3f9c, 0xf8e7, 0x0263,
+X   0x6600, 0x3f18, 0xf863, 0x0261,
+X   0x0600, 0x0000, 0x0000, 0x0260,
+X   0x0600, 0x0000, 0x0000, 0x0f60,
+X   0xfe00, 0xffff, 0xffff, 0x197f,
+X   0xfc00, 0xffff, 0xffff, 0x21bf,
+X   0x0000, 0x0000, 0x0000, 0xfec0,
+X   0xfffe, 0xffff, 0xffff, 0x827f,
+X   0x0002, 0x0000, 0x0000, 0xba40,
+X   0xfffa, 0xffff, 0xffff, 0xba5f,
+X   0xfffa, 0xffff, 0xffff, 0x825f,
+X   0x0002, 0x0000, 0x0000, 0x8240,
+X   0xfffe, 0xffff, 0xffff, 0xfe7f};
+________This_Is_The_END________
+if test `wc -l < idle.icon` -ne 67; then
+	echo 'shar: idle.icon was damaged during transit (should have been 67 bytes)'
+fi
+fi		; : end of overwriting check
+echo 'x - idle.man'
+if test -f idle.man; then echo 'shar: not overwriting idle.man'; else
+sed 's/^X//' << '________This_Is_The_END________' > idle.man
+X.\" $Header: idle.man,v 1.3 88/11/19 14:55:56 saka Exp $ University of Library and Information Science
+X.TH IDLE 1 "17 October 1988"
+X.SH NAME
+Xidle \- display idling
+X.SH SYNOPSIS
+X.B idle
+X[ options ]
+X.SH DESCRIPTION
+X.I Idle
+Xは作業中にしばらく席を外すとき、
+Xディスプレイの焼きつきを防止しつつ作業の途中であることを
+X表示するものです。
+X.PP
+Xこの
+X.I idle
+Xは
+X.I X
+Xwindow system version
+X.I 10
+X.I (X10)
+Xが動作しているディスプレイでは
+Xビットマップで、
+Xそれ以外の場合
+X.I (TTY)
+Xは
+X.I "curses(3X)"
+Xパッケージを用いてキャラクタで
+X表示を行ないます。
+X.PP
+X.I Idle
+Xは次のオプションを解釈します。
+X.TP 12
+X.B \-X
+X.I X
+Xwindow 
+X.I (X10)
+Xモードの指定。
+Xビットマップ・アイコン表示による
+X.I idle
+X.I (DISPLAY
+X環境変数がセットされているときのデフォルト)。
+X.TP
+X.B \-T
+Xキャラクタ・ターミナル
+X.I (TTY)
+Xモードの指定。
+Xキャラクタ・アイコン表示による
+X.I idle
+X.I (DISPLAY
+X環境変数がセットされていないときのデフォルト)。
+X.TP
+X.B \-b
+Xスクリーン・ブランク・モードの指定。何も表示しない。
+X.TP
+X.B \-m
+Xムービング・アイコン・モードの指定。
+Xアイコンが2秒おきに移動する(デフォルト)。
+X.TP
+X.BI \-F " color"
+Xフォア・グランド・カラーの指定(デフォルトは白)。
+X.I (X10
+Xモード、カラーディスプレイのみ。)
+X.TP
+X.BI \-B " color"
+Xバック・グランド・カラーの指定(デフォルトは黒)。
+X.I (X10
+Xモード、カラーディスプレイのみ。)
+X.TP
+X.B \-r
+Xリバース・カラーの指定
+X.I (X10
+Xモードのみ)。
+X.TP
+X.BI \-i " string"
+Xアイコンとなるビットマップ・ファイルの名前
+X.I (X10
+Xモード)/文字列
+X.I (TTY
+Xモード)の指定。
+X.TP
+X.BI \-D " display"
+X.I X10
+Xのディスプレイの指定
+X.I (X10
+Xモードのみ)。
+X.PP
+X.I Idle
+Xはキーボードかマウスのボタン
+X.I (X10
+Xモードのみ)が押されれば即座に解除します。
+X.PP
+X.I color
+Xおよび
+X.I display
+Xの指定は
+X.I X10
+Xの形式に準拠しています。
+Xまた、アイコンは
+X.I TTY
+Xモードでは指定した
+X.I string
+X自身が用いられ、
+X.I X10
+Xモードでは
+X.I string
+Xをファイル名として
+X.I "bitmap(1)"
+Xで作成された形式のビットマップ・ファイルを
+X読み込みアイコンとして用います。
+X.SH AUTHOR
+X阪口哲男(図書館情報大学)	E-mail: saka@ulis.JUNET
+X.SH BUGS
+X.I TTY
+Xモードの場合は２秒毎に画面の書き換えが行なわれるため、
+X.I w(1)
+Xなどにおける
+X.B idle
+X時間が表示されません。
+________This_Is_The_END________
+if test `wc -l < idle.man` -ne 118; then
+	echo 'shar: idle.man was damaged during transit (should have been 118 bytes)'
+fi
+fi		; : end of overwriting check
+exit 0

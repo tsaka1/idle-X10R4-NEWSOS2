@@ -1,0 +1,1196 @@
+head     1.14;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.14
+date     88.10.11.14.46.19;  author saka;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.10.10.16.01.45;  author saka;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.10.08.17.44.23;  author saka;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.10.08.16.34.24;  author saka;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.10.08.16.01.25;  author saka;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.10.08.15.48.20;  author saka;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.10.08.15.11.04;  author saka;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.04.18.17.03.29;  author saka;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.04.18.14.54.59;  author saka;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.04.18.10.49.42;  author saka;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.04.18.10.46.24;  author saka;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.16.17.45.50;  author saka;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.16.11.34.29;  author saka;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.16.11.12.37;  author saka;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.14
+log
+@*** empty log message ***
+@
+text
+@/*
+ * idle.c - Display Idle (X10/TTY)
+ *
+ *	Written by saka@@ulis.junet (Sakaguchi, Tetsuo)
+ *
+ * Program name:	idle
+ * Parameters:
+ *	-X:		X10 mode (default if DISPLAY exists in env.)
+ *	-T:		TTY mode (default if DISPLAY does not exist in env.)
+ *	-b:		screen blank mode
+ *	-m:		moving icon mode (default)
+ *	-F {color}:	foreground color (color X10 only, default: white)
+ *	-B {color}:	background color (color X10 only, default: black)
+ *	-r:		reverse color (X10 only)
+ *	-i {file/word}:	set icon bitmap file (X10) or icon word (TTY)
+ *	-D {display}:	display name (X10 only)
+ */
+
+char RCSHeader[] = "$Header: idle.c,v 1.13 88/10/10 16:01:45 saka Exp $";
+
+#include <stdio.h>
+#include <curses.h>
+#include <sys/time.h>
+#include <signal.h>
+#include <math.h>
+#include <strings.h>
+#include <X/Xlib.h>
+
+/* default icons */
+#include "csr.icon"
+#include "csr_mask.icon"
+#include "idle.icon"
+#define IDLE_WORD	"NEWS"
+
+/* global variables */
+char *name;					/* program name */
+char *fg_color = NULL, *bg_color = NULL;	/* color name */
+Color foreground, background;			/* colors */
+int rv_mode = 0;				/* reverse flag */
+char *icon_name = NULL;				/* icon file/word */
+int icon_width = idle_width;			/* width of bitmap icon */
+int icon_height = idle_height; 			/* height of bitmap icon */
+short *icon_bits = idle_bits;			/* bitmap of icon */
+char *icon_word;				/* word of icon */
+char *env_display = NULL;			/* env. DISPLAY */
+Window wd;					/* window for idle */
+Cursor csr;					/* cursor (none) */
+Display *display;				/* X-display */
+Bitmap bmask;					/* bitmap mask for icon */
+int width, height;				/* W & H of display */
+
+char *getenv();
+
+
+
+/* Initialize X10 idle window */
+initX10 ()
+{
+	Color tmp_color;
+	Pixmap window_bg;	/* background pixmap */
+	
+	/* Load bitmap file, if needed */
+	if (icon_name != NULL) {
+		if (XReadBitmapFile(icon_name, &icon_width, &icon_height,
+				&icon_bits, NULL, NULL) != 1) {
+			fprintf(stderr, "%s: Can't read bitmap file\n", name);
+			exit(1);
+		}
+	}
+	/* Connecting to X10-server */
+	if ((display = XOpenDisplay(env_display)) == 0) {
+		fprintf(stderr, "%s: Can't open display\n", name);
+		exit(1);
+	}
+	/* Set foreground & background colors */
+	if (DisplayPlanes() > 1) {
+		/* on color display */
+		if (fg_color != NULL) {
+			if (XParseColor(fg_color, &foreground) == 0) {
+				fprintf(stderr, "%s: Bad color\n", name);
+				exit(1);
+			}
+		} else {
+			XParseColor("#ffffffffffff", &foreground);
+		}
+		if (bg_color != NULL) {
+			if (XParseColor(bg_color, &background) == 0) {
+				fprintf(stderr, "%s: Bad color\n", name);
+				exit(1);
+			}
+		} else {
+			XParseColor("#000000000000", &background);
+		}
+		XGetHardwareColor(&foreground);
+		XGetHardwareColor(&background);
+	} else {
+		/* on monochrome display */
+		foreground.pixel = WhitePixel;
+		background.pixel = BlackPixel;
+	}
+	if (rv_mode != 0) {
+		tmp_color = foreground;
+		foreground = background;
+		background = tmp_color;
+	}
+	/* Create idle window */
+	window_bg = XMakePixmap(0, background.pixel, background.pixel);
+	width = DisplayWidth(display);
+	height = DisplayHeight(display);
+	if ((wd = XCreateWindow(RootWindow, 0, 0, width, height, 0, 0,
+			window_bg)) == 0) {
+		fprintf(stderr, "%s: Can't create window\n", name);
+		exit(1);
+	}
+	/* Set null cursor and other property */
+	csr = XCreateCursor(csr_width, csr_height, csr_bits, csr_mask_bits,
+			csr_x_hot, csr_y_hot, background.pixel,
+			background.pixel, GXcopy);
+	bmask = XStoreBitmap(icon_width, icon_height, icon_bits);
+	XStoreName(wd, name);
+	XDefineCursor(wd, csr);
+	XMapWindow(wd);
+	XClear(wd);
+	XSelectInput(wd, KeyPressed | ButtonPressed);
+	return (0);
+}
+
+/* Re-draw display (X10), when SIGALRM */
+redrawX10 ()
+{
+	int x, y;
+	
+	/* Hide all other windows */
+	XRaiseWindow(wd);
+	/* Re-drawing */
+	XClear(wd);
+	x = rand() % (width - icon_width);
+	y = rand() % (height - icon_height);
+	XBitmapBitsPut(wd, x, y, icon_width, icon_height, icon_bits,
+			foreground.pixel, background.pixel, bmask,
+			GXcopy, AllPlanes);
+	XFlush();
+	return (0);
+}
+
+/* Wait for KEY/BUTTON press */
+waitingX10 ()
+{
+	XEvent event;
+	
+	XNextEvent(&event);
+	return (0);
+}
+
+/* Idle window destory */
+resetX10 ()
+{
+	XFreeCursor(csr);
+	XFreeBitmap(bmask);
+	XDestroyWindow(wd);
+	return (0);
+}
+
+
+
+/* Initialize TTY display */
+initTTY ()
+{
+	char bp[1024];
+	
+	/* Set icon word */
+	if (icon_name != NULL) {
+		icon_word = icon_name;
+	} else {
+		icon_word = IDLE_WORD;
+	}
+	/* Check termcap & initialize curses package */
+	if (tgetent(bp, getenv("TERM")) != 1) {
+		fprintf(stderr, "%s: Can't open termcap", name);
+		exit(1);
+	}
+	width = tgetnum("co");
+	height = tgetnum("li");
+	if (width < 0 || height < 0) {
+		fprintf(stderr, "%s: No 'co' or 'li' capability\n", name);
+		exit(1);
+	}
+	initscr();
+	raw();
+	setbuf(stdin, NULL);
+	clear();
+	refresh();
+	return (0);
+}
+
+/* Re-draw display (TTY), when SIGALRM */
+redrawTTY ()
+{
+	int x, y;
+
+	/* Re-drawing */	
+	clear();
+	x = rand() % (width - strlen(icon_word));
+	y = rand() % (height - strlen(icon_word));
+	move(y, x);
+	addstr(icon_word);
+	refresh();
+	return (0);
+}
+
+/* Wait for KEY press */
+waitingTTY ()
+{
+	(void) getchar();
+	return (0);
+}
+
+/* Reset display (TTY) */
+resetTTY ()
+{
+	endwin();
+	return (0);
+}
+
+
+
+/* for screen blank re-drawing (do nothing) */
+redrawBLANK ()
+{
+	return (0);
+}
+
+/* parameter error subroutine */
+bad_param ()
+{
+	fprintf(stderr, "%s: Bad parameter\n", name);
+	exit(1);
+}
+
+/* Main routine */
+main (argc, argv)
+int argc;
+char **argv;
+{
+	int (*init_fn)() = NULL;	/* initialize function entry */
+	int (*re_draw_fn)() = NULL;	/* re-draw function entry */
+	int (*waiting_fn)() = NULL;	/* wait function entry */
+	int (*reset_fn)() = NULL;	/* reset function entry */
+	struct itimerval it_val, it_dummy;
+
+	/* Setting mode by specified parameters */
+	name = *argv++;
+	argc--;
+	while (argc > 0) {
+		if (**argv != '-') bad_param();
+		switch (*(*argv + 1)) {
+			case 'X':	/* select X10 display mode */
+				init_fn = initX10;
+				if (re_draw_fn != redrawBLANK) {
+					re_draw_fn = redrawX10;
+				}
+				waiting_fn = waitingX10;
+				reset_fn = resetX10;
+				break;
+			case 'T':	/* select TTY display mode */
+				init_fn = initTTY;
+				if (re_draw_fn != redrawBLANK) {
+					re_draw_fn = redrawTTY;
+				}
+				waiting_fn = waitingTTY;
+				reset_fn = resetTTY;
+				break;
+			case 'b':	/* select blank idle mode */
+				re_draw_fn = redrawBLANK;
+				break;
+			case 'm':	/* select moving idle mode */
+				/* do nothing */
+				break;
+			case 'F':	/* set foreground color */
+				if (--argc < 1) bad_param();
+				fg_color = *(++argv);
+				break;
+			case 'B':	/* set background color */
+				if (--argc < 1) bad_param();
+				bg_color = *(++argv);
+				break;
+			case 'r':	/* reverse color mode */
+				rv_mode = -1;
+				break;
+			case 'i':	/* set specified icon */
+				if (--argc < 1) bad_param();
+				icon_name = *(++argv);
+				break;
+			case 'D':	/* set DISPLAY */
+				if (--argc < 1) bad_param();
+				env_display = *(++argv);
+				break;
+			default:	/* error */
+				bad_param();
+				break;
+		}
+		argv++;
+		argc--;
+	}
+	/* Set default mode by environment */
+	if (init_fn == NULL) {	/* Not set display mode */
+		if (env_display != NULL) {
+			/* DISPLAY specified, set X10 mode */
+			init_fn = initX10;
+			if (re_draw_fn != redrawBLANK) re_draw_fn = redrawX10;
+			waiting_fn = waitingX10;
+			reset_fn = resetX10;
+		} else {
+			/* DISPLAY not specified */
+			if ((env_display = getenv("DISPLAY")) != NULL) {
+				/* env.DISPLAY exists, set X10 mode */
+				init_fn = initX10;
+				if (re_draw_fn != redrawBLANK) {
+					re_draw_fn = redrawX10;
+				}
+				waiting_fn = waitingX10;
+				reset_fn = resetX10;
+			} else {
+				/* env.DISPLAY not exists, set TTY mode */
+				init_fn = initTTY;
+				if (re_draw_fn != redrawBLANK) {
+					re_draw_fn = redrawTTY;
+				}
+				waiting_fn = waitingTTY;
+				reset_fn = resetTTY;
+			}
+		}
+	}
+	/* Initialize display */
+	init_fn();
+	/* Set SIGALRM vector */
+	signal(SIGALRM, re_draw_fn);
+	/* Set interval timer */
+	it_val.it_interval.tv_sec = 2;
+	it_val.it_interval.tv_usec = 0;
+	it_val.it_value.tv_sec = 2;
+	it_val.it_value.tv_usec = 0;
+	setitimer(ITIMER_REAL, &it_val, &it_dummy);
+	/* Wait for KEY/(BUTTON) press */
+	waiting_fn();
+	/* Unset interval timer */
+	it_val.it_interval.tv_sec = 0;
+	it_val.it_interval.tv_usec = 0;
+	it_val.it_value.tv_sec = 0;
+	it_val.it_value.tv_usec = 0;
+	setitimer(ITIMER_REAL, &it_val, &it_dummy);
+	signal(SIGALRM, SIG_DFL);
+	/* Reset display */
+	reset_fn();
+	exit(0);
+}
+@
+
+
+1.13
+log
+@*** empty log message ***
+@
+text
+@d2 1
+a2 1
+ * idle.c - Idling Display (X10/TTY)
+d4 1
+a4 1
+ *	$Header: idle.c,v 1.12 88/10/08 17:44:23 saka Exp $
+d19 2
+d53 1
+d55 2
+a56 1
+/* Initialize display routines */
+d62 1
+a62 1
+	/* Initialize display (X10) */
+d70 1
+d75 1
+d77 1
+d97 1
+d106 1
+d115 1
+d128 1
+d133 1
+a133 1
+	/* re-draw display (X10) */
+d135 1
+d146 2
+a147 1
+checkX10 ()
+d151 2
+a152 11
+	while (1) {
+		XNextEvent(&event);
+		switch (event.type) {
+			case ButtonPressed:
+			case KeyPressed:
+				return (0);
+				break;
+			default:
+				break;
+		}
+	}
+d155 1
+a157 1
+	/* Reset display (X10) */
+d163 1
+d165 2
+a166 1
+/* TTY subroutines */
+d171 1
+a171 1
+	/* Initialize display (TTY) */
+d177 1
+a187 1
+	
+d196 1
+d200 2
+a201 2
+	
+	/* re-draw display (TTY) */
+d211 2
+a212 1
+checkTTY ()
+d214 1
+a214 3
+	int c;
+	
+	c = getchar();
+d218 1
+a220 1
+	/* Reset display (TTY) */
+d224 1
+d226 2
+a227 1
+/* for screen blank */
+d230 1
+a230 1
+	/* do nothing */
+d233 1
+a233 1
+/* error sub */
+d240 1
+d247 1
+a247 1
+	int (*check_fn)() = NULL;	/* check & wait function entry */
+d251 1
+a251 2
+	/* main body */
+	/* Mode check X10 or TTY ? */
+d257 1
+a257 1
+			case 'X':	/* select X10 display */
+d262 1
+a262 1
+				check_fn = checkX10;
+d265 1
+a265 1
+			case 'T':	/* select TTY display */
+d270 1
+a270 1
+				check_fn = checkTTY;
+d273 1
+a273 1
+			case 'b':	/* select blank idle */
+d276 1
+a276 1
+			case 'm':	/* select moving idle */
+d287 1
+a287 1
+			case 'r':	/* reverse color */
+d305 2
+a306 1
+	if (init_fn == NULL) {
+d308 1
+d311 1
+a311 1
+			check_fn = checkX10;
+d314 1
+d316 1
+d321 1
+a321 1
+				check_fn = checkX10;
+d324 1
+d329 1
+a329 1
+				check_fn = checkTTY;
+d344 3
+a346 3
+	/* Input device check */
+	check_fn();
+	/* If any KEY/MOUSE puressed, then exit idle */
+@
+
+
+1.12
+log
+@*** empty log message ***
+@
+text
+@d4 1
+a4 1
+ *	$Header: idle.c,v 1.11 88/10/08 16:34:24 saka Exp $
+d8 8
+a15 11
+ *	(selector)
+ *	-X:	on X10 display (If environment variable DISPLAY is set, this is default)
+ *	-T:	on TTY display (If environment variable DISPLAY is unset, this is default)
+ *	(selector)
+ *	-b:	screen blank idle
+ *	-m:	moving icon idle (default)
+ *	(nonselector)
+ *	-F {color}:	foreground color (X10 color display only) (default: white)
+ *	-B {color}:	background color (X10 color display only) (default: black)
+ *	-r:		reverse color
+ *	-i {file/word}:	set icon bitmap file or icon word
+d27 1
+d31 1
+a31 1
+#define IDLE_WORD	"Idling.."
+d33 2
+a34 2
+/* gloval variables */
+char *name;	/* this program name */
+d36 13
+a48 13
+Color foreground, background;
+int rv_mode = 0;
+Pixmap window_bg;
+char *icon_file = NULL;	/* icon name */
+int icon_width = idle_width, icon_height = idle_height;
+short *icon_bits = idle_bits;
+char *icon_word;
+char *env_display = NULL;	/* environment variable DISPLAY */
+Window wd;
+Cursor csr;
+Display *display;
+Bitmap bmask;
+int width, height;
+d51 1
+a51 1
+
+d56 1
+d59 4
+a62 3
+	if (icon_file != NULL) {
+		if (XReadBitmapFile(icon_file, &icon_width, &icon_height, &icon_bits, NULL, NULL) != 1) {
+			fprintf(stderr, "%s: can't read bitmap file\n", name);
+d67 1
+a67 1
+		fprintf(stderr, "%s: can't open display\n", name);
+d101 3
+a103 2
+	if ((wd = XCreateWindow(RootWindow, 0, 0, width, height, 0, 0, window_bg)) == 0) {
+		fprintf(stderr, "%s: can't create window\n", name);
+d106 3
+a108 1
+	csr = XCreateCursor(csr_width, csr_height, csr_bits, csr_mask_bits, csr_x_hot, csr_y_hot, background.pixel, background.pixel, GXcopy);
+d118 43
+d166 2
+a167 2
+	if (icon_file != NULL) {
+		icon_word = icon_file;
+d172 1
+a172 1
+		fprintf(stderr, "%s: can't open termcap", name);
+d178 1
+a178 1
+		fprintf(stderr, "%s: no 'co' or 'li' capability\n", name);
+a189 15
+/* re-draw display routines */
+redrawX10 ()
+{
+	int x, y;
+	
+	/* re-draw display (X10) */
+	XRaiseWindow(wd);
+	XClear(wd);
+	x = rand() % (width - icon_width);
+	y = rand() % (height - icon_height);
+	XBitmapBitsPut(wd, x, y, icon_width, icon_height, icon_bits, foreground.pixel, background.pixel, bmask, GXcopy, AllPlanes);
+	XFlush();
+	return (0);
+}
+
+a203 23
+redrawBLANK ()
+{
+	/* do nothing */
+}
+
+/* Check & wait input device */
+checkX10 ()
+{
+	XEvent event;
+	
+	while (1) {
+		XNextEvent(&event);
+		switch (event.type) {
+			case ButtonPressed:
+			case KeyPressed:
+				return (0);
+				break;
+			default:
+				break;
+		}
+	}
+}
+
+a211 10
+/* Reset display routines */
+resetX10 ()
+{
+	/* Reset display (X10) */
+	XFreeCursor(csr);
+	XFreeBitmap(bmask);
+	XDestroyWindow(wd);
+	return (0);
+}
+
+d218 6
+d225 7
+d238 1
+a238 1
+	int (*check_fn)() = NULL;	/* check device and wait function entry */
+d240 1
+a240 1
+	struct itimerval it_val, oit_val;
+d247 1
+a247 4
+		if (**argv != '-') {
+			fprintf(stderr, "%s: Bad parameter\n", name);
+			exit(1);
+		}
+d251 3
+a253 1
+				if (re_draw_fn != redrawBLANK) re_draw_fn = redrawX10;
+d259 3
+a261 1
+				if (re_draw_fn != redrawBLANK) re_draw_fn = redrawTTY;
+d272 1
+a272 4
+				if (--argc < 1) {
+					fprintf(stderr, "%s: Bad parameter\n", name);
+					exit(1);
+				}
+d276 1
+a276 4
+				if (--argc < 1) {
+					fprintf(stderr, "%s: Bad parameter\n", name);
+					exit(1);
+				}
+d283 2
+a284 5
+				if (--argc < 1) {
+					fprintf(stderr, "%s: Bad parameter\n", name);
+					exit(1);
+				}
+				icon_file = *(++argv);
+d287 1
+a287 4
+				if (--argc < 1) {
+					fprintf(stderr, "%s: Bad parameter\n", name);
+					exit(1);
+				}
+d291 1
+a291 2
+				fprintf(stderr, "%s: Bad parameter\n", name);
+				exit(1);
+d306 3
+a308 1
+				if (re_draw_fn != redrawBLANK) re_draw_fn = redrawX10;
+d313 3
+a315 1
+				if (re_draw_fn != redrawBLANK) re_draw_fn = redrawTTY;
+d330 1
+a330 1
+	setitimer(ITIMER_REAL, &it_val, &oit_val);
+d338 1
+a338 1
+	setitimer(ITIMER_REAL, &it_val, &oit_val);
+@
+
+
+1.11
+log
+@*** empty log message ***
+@
+text
+@d2 1
+a2 1
+ * idle.c - Idling Display (X10/CGINEWS/TTY)
+d4 1
+a4 1
+ *	$Header: idle.c,v 1.10 88/10/08 16:01:25 saka Exp $
+d9 2
+a10 3
+ *	-X:	on X10 display
+ *	-C:	on CGI(NEWS bitmap) display
+ *	-T:	on TTY display
+d15 2
+a16 2
+ *	-F {color}:	foreground color (X10/CGI color display only) (default: white)
+ *	-B {color}:	background color (X10/CGI color display only) (default: black)
+d18 1
+a18 1
+ *	-i {file}:	set icon bitmap/word
+d27 1
+d33 1
+a34 5
+/* display modes */
+#define X10	1
+#define CGI	2
+#define TTY	4
+
+d44 1
+a44 1
+char icon_word[] = "Idling..";
+a114 5
+initCGI ()
+{
+	/* Initialize display (CGI) */
+}
+
+d117 2
+d120 22
+a158 5
+redrawCGI ()
+{
+	/* re-draw display (CGINEWS) */
+}
+
+d161 2
+d164 7
+a195 4
+checkCGI ()
+{
+}
+
+d198 4
+a213 5
+resetCGI ()
+{
+	/* Reset display (CGI) */
+}
+
+d217 2
+d232 1
+a232 1
+	/* Mode check X10, CGI, or TTY ? */
+a245 6
+				break;
+			case 'C':	/* select CGI display */
+				init_fn = initCGI;
+				if (re_draw_fn != redrawBLANK) re_draw_fn = redrawCGI;
+				check_fn = checkCGI;
+				reset_fn = resetCGI;
+@
+
+
+1.10
+log
+@*** empty log message ***
+@
+text
+@d4 1
+a4 1
+ *	$Header: idle.c,v 1.9 88/10/08 15:48:20 saka Exp $
+d16 3
+a18 2
+ *	-F {color}:	foreground color (X10/CGI only) (default: white)
+ *	-B {color}:	background color (X10/CGI only) (default: black)
+d43 1
+d61 2
+d74 8
+a81 4
+	if (fg_color != NULL) {
+		if (XParseColor(fg_color, &foreground) == 0) {
+			fprintf(stderr, "%s: Bad color\n", name);
+			exit(1);
+d83 7
+a89 7
+	} else {
+		XParseColor("#ffffffffffff", &foreground);
+	}
+	if (bg_color != NULL) {
+		if (XParseColor(bg_color, &background) == 0) {
+			fprintf(stderr, "%s: Bad color\n", name);
+			exit(1);
+d91 2
+d94 2
+a95 1
+		XParseColor("#000000000000", &background);
+d97 5
+a101 2
+	XGetHardwareColor(&foreground);
+	XGetHardwareColor(&background);
+d262 3
+@
+
+
+1.9
+log
+@*** empty log message ***
+@
+text
+@d4 1
+a4 1
+ *	$Header: idle.c,v 1.8 88/10/08 15:11:04 saka Exp $
+d38 1
+a38 1
+/* gloval virables */
+d44 3
+a46 2
+int icon_width, icon_height;
+short *icon_bits;
+d54 2
+d60 6
+a204 3
+	icon_bits = idle_bits;
+	icon_width = idle_width;
+	icon_height = idle_height;
+a254 4
+				if (XReadBitmapFile(icon_file, &icon_width, &icon_height, &icon_bits, NULL, NULL) != 1) {
+					fprintf(stderr, "%s: can't read bitmap file\n", name);
+					exit(1);
+				}
+@
+
+
+1.8
+log
+@*** empty log message ***
+@
+text
+@d4 1
+a4 1
+ *	$Header$
+d40 3
+a42 1
+char *fg_color = NULL, bg_color = NULL;	/* color name */
+d57 1
+a57 1
+	if (!(display = XOpenDisplay(env_display))) {
+d61 19
+d82 1
+a82 1
+	if (!(wd = XCreateWindow(RootWindow, 0, 0, width, height, 0, 0, BlackPixmap))) {
+d86 1
+a86 1
+	csr = XCreateCursor(csr_width, csr_height, csr_bits, csr_mask_bits, csr_x_hot, csr_y_hot, BlackPixel, BlackPixel, GXcopy);
+d116 1
+a116 1
+	XBitmapBitsPut(wd, x, y, icon_width, icon_height, icon_bits, WhitePixel, BlackPixel, bmask, GXcopy, AllPlanes);
+@
+
+
+1.7
+log
+@*** empty log message ***
+@
+text
+@d2 19
+a20 3
+	idle : X-window idling display
+	$Header: idle.c,v 1.6 88/04/18 14:54:59 saka Exp $
+*/
+d23 3
+d33 12
+a45 1
+Window sbw;
+d47 3
+d51 2
+a52 3
+main (argc, argv)
+	int argc;
+	char * argv[];
+d54 3
+a56 9
+	Display *display;
+	OpaqueFrame wform;
+	Bitmap bmask;
+	char xy[20];
+	int width, height;
+	int x_rnd, y_rnd;
+
+	if (!(display = XOpenDisplay(NULL))) {
+		fprintf(stderr, "%s: can't open display\n", *argv);
+d61 2
+a62 9
+	(void) sprintf(xy, "%dx%d+0+0", width, height);
+	csr = XCreateCursor(csr_width, csr_height, csr_bits,
+			csr_mask_bits, csr_x_hot, csr_y_hot,
+			BlackPixel, BlackPixel, GXcopy);
+	bmask = XStoreBitmap(idle_width, idle_height, idle_bits);
+	wform.bdrwidth = 0;
+	wform.background = BlackPixmap;
+	if (!(wd = XCreate(*argv, *argv, xy, xy, &wform, width, height))) {
+		fprintf(stderr, "%s: can't create window\n", *argv);
+d65 3
+a67 2
+	XStoreName(wd, *argv);
+	XGrabServer();
+d71 59
+a129 8
+	while (mouseStatus()) {
+		XClear(wd);
+		x_rnd = rand() % (width - idle_width);
+		y_rnd = rand() % (height - idle_height);
+		XBitmapBitsPut(wd, x_rnd, y_rnd, idle_width, idle_height,
+				idle_bits, WhitePixel, BlackPixel,
+				bmask, GXcopy, AllPlanes);
+		sleep(2);
+d131 14
+d148 1
+a148 1
+	XUngrabServer();
+d151 1
+a151 1
+mouseStatus ()
+d153 2
+a154 2
+	int x, y;
+	short stat;
+d156 91
+a246 11
+	(void) XQueryMouseButtons(wd, &x, &y, &sbw, &stat);
+	switch (stat) {
+		case LeftMask:
+		case MiddleMask:
+		case RightMask:
+			return 0;
+			break;
+		default:
+			XSync(1);
+			return 1;
+			break;
+d248 42
+a290 1
+
+@
+
+
+1.6
+log
+@*** empty log message ***
+@
+text
+@d3 1
+a3 1
+	$Header: idle.c,v 1.5 88/04/18 10:49:42 saka Exp $
+d47 1
+a47 1
+/*	XGrabServer();*/
+d63 1
+a63 1
+/*	XUngrabServer();*/
+d73 2
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d3 1
+a3 1
+	$Header: idle.c,v 1.4 88/04/18 10:46:24 saka Exp $
+d15 1
+d46 2
+a47 2
+	XGrabServer();
+	XSelectInput(wd, ButtonPressed | ExposeWindow | MouseMoved);
+d51 1
+a51 1
+	while (ProcessEvent()) {
+d63 1
+a63 1
+	XUngrabServer();
+d66 1
+a66 1
+ProcessEvent ()
+d68 2
+a69 1
+	XEvent event;
+d71 3
+a73 10
+	XNextEvent(&event);
+	switch (event.type) {
+		case MouseMoved:
+			return 1;
+			break;
+		case ExposeWindow:
+			XSync(1);
+			return 1;
+			break;
+		case ButtonPressed:
+d77 1
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@d3 1
+a3 1
+	$Header: idle.c,v 1.3 88/04/16 17:45:50 saka Exp $
+d45 1
+d62 1
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d3 1
+a3 1
+	$Header: idle.c,v 1.2 88/04/16 11:34:29 saka Exp $
+a22 1
+	XEvent event;
+d45 1
+a45 1
+	XSelectInput(wd, ButtonPressed | ExposeWindow, &event);
+d49 1
+a49 1
+	while (ProcessEventnw()) {
+d63 1
+a63 1
+ProcessEventnw ()
+d67 5
+a71 2
+	if ((XCheckMaskEvent(ButtonPressed | ExposeWindow, &event))) {
+		switch (event.type) {
+d79 3
+a81 1
+		}
+a82 1
+	return 1;
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d3 1
+a3 1
+	$Header: idle.c,v 1.1 88/04/16 11:12:37 saka Exp $
+d7 1
+d12 1
+d24 1
+a24 1
+
+d26 2
+d33 3
+a35 2
+	(void) sprintf(xy, "%dx%d+0+0", DisplayWidth(display),
+			DisplayHeight(display));
+d39 1
+d42 1
+a42 2
+	if (!(wd = XCreate(*argv, *argv, xy, xy, &wform,
+			DisplayWidth(display), DisplayHeight(display)))) {
+d50 9
+a58 2
+	while (ProcessEvent())
+		;
+d60 1
+d64 1
+a64 1
+ProcessEvent ()
+d68 10
+a77 9
+	XNextEvent(&event);
+	switch (event.type) {
+	case ExposeWindow:
+		XSync(1);
+		return 1;
+		break;
+	case ButtonPressed:
+		return 0;
+		break;
+d79 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 1
+a3 1
+	$Header$
+d9 3
+d13 1
+d22 1
+d31 3
+d42 1
+d47 1
+@

@@ -1,0 +1,39 @@
+From saka Sat Oct  8 18:26:41 1988
+Received: by ulisnrt.ulis.junet (4.12/6.3Junet-1.0)
+	id AA01381; Sat, 8 Oct 88 18:26:31 jst
+Date: Sat, 8 Oct 88 18:26:31 jst
+From: saka (Tetsuo Sakaguchi)
+Message-Id: <8810080926.AA01381@ulisnrt.ulis.junet>
+To: msgs
+Subject: Version up of idle (In Kj)
+Cc: saka
+Status: RO
+
+idle コマンドが X-Window 以外の環境でも使えるようになりました。
+新しいバージョンでは次のオプションが指定できます。
+オプション	意味（動作）
+-X		X-Window モードの指定、従来通りの X における idle として動作
+		（DISPLAY 変数がセットされているときのデフォルト）
+-T		キャラクタ・ターミナル (TTY)・モードの指定
+		（DISPLAY 変数がセットされていないときのデフォルト）
+-b		スクリーン・ブランクの指定、何も表示しない
+-m		ムービング・アイコンの指定、ビットマップ／英文字のアイコンが
+			２秒おきに移動する。（デフォルト）
+-F {color}	フォア・グランド・カラーの指定（デフォルトは白）
+		(X モード、カラーディスプレイのみ）
+-B {color}	バック・グランド・カラーの指定（デフォルトは黒）
+		(X モード、カラーディスプレイのみ）
+-r		リバース・カラーの指定 (X モードのみ）
+-i {file/word}	ビットマップ・ファイル（X モード）／アイコン語（TTY モード）
+			の指定
+-D {display}	X のディスプレイの指定 (X モードのみ）
+
+また、解除はどれかキーを押すか、マウスのボタン（X モードのみ）を
+押してください。（反応は以前に比べ格段に向上しました。）
+
+--
+阪口哲男＠図書館情報大学（大学院研究科修士課程１年）
+E-mail address: saka@ulis.junet (JUNET)
+                PEC00237        (NIFTY-Serve)
+                74420,237       (CompuServe)
+

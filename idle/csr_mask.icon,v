@@ -1,0 +1,33 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    saka:1.1; strict;
+comment  @@;
+
+
+1.1
+date     88.07.15.13.48.29;  author saka;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#define csr_mask_width 16
+#define csr_mask_height 16
+#define csr_mask_x_hot 0
+#define csr_mask_y_hot 0
+static short csr_mask_bits[] = {
+   0x0000, 0x0000, 0x0000, 0x0000,
+   0x0000, 0x0000, 0x0000, 0x0000,
+   0x0000, 0x0000, 0x0000, 0x0000,
+   0x0000, 0x0000, 0x0000, 0x0000};
+@
