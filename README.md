@@ -8,7 +8,7 @@ idle.list | The file list of idle.Z
 idle/Makefile | Makefile for old BSD make
 idle/Makefile,v | Old RCS repository file of Makefile
 idle/README | README file written in Japanese (Shift-JIS code)
-idle/csr.icon | X10 bitmap image file of corsor
+idle/csr.icon | X10 bitmap image file of cursor
 idle/csr.icon,v | Old RCS repository file of csr.icon
 idle/csr_mask.icon | Bit mask pattern of csr.icon
 idle/csr_mask.icon,v | Old RCS repository file of csr_mask.icon
