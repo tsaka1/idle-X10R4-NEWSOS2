@@ -36,8 +36,8 @@ SONY NEWS (NWS-841) の標準のスクリーンセーバが画面がいきなり
 当時のNEWS の OS (NEWS-OS2.2) は 4.2BSD ベースで日本語文字コードは Shift-JIS
 であり、GUI は X-Window System Version 10 Release 4 (X10R4)ベースでした。
 その環境でのみ動作確認し、他の機関でも NEWS を使っているところで欲しいという
-声もあったので、NetNews の fj.sources で配布しました。残念ながら、fj.sources
-に流した私の article は手元に残っていません。
+声もあったので、NetNews の fj.sources で配布しました。~~残念ながら、fj.sources
+に流した私の article は手元に残っていません。~~(最後に追記あり)
 
 なお、おまけの機能として GUI ではなく、当時はまだまだ活用されていた文字端末で
 ログインした時用に、curses モード、つまり文字端末モードも備えています。文字端末
